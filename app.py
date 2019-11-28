@@ -43,8 +43,6 @@ class App(object):
         # process keyboard inputs
         keys = pg.key.get_pressed()
 
-        if keys[pg.K_ESCAPE]:
-            self.done = True
         if keys[pg.K_DOWN]:
             self.camera.move(np.array((0, App.CAMERA_MOVE_SPEED)))
         if keys[pg.K_UP]:
@@ -53,16 +51,21 @@ class App(object):
             self.camera.move(np.array((-App.CAMERA_MOVE_SPEED, 0)))
         if keys[pg.K_RIGHT]:
             self.camera.move(np.array((App.CAMERA_MOVE_SPEED, 0)))
-        if keys[pg.K_SPACE]:
-            self.state = "run"
 
         # process pygame events
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.done = True
 
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self.done = True
+
+                elif event.key == pg.K_SPACE:
+                    self.state = "build"
+
             elif event.type == pg.MOUSEBUTTONDOWN:
-                # Process clicks
+                # Process mouse actions
 
                 # scroll to zoom
                 if event.button == 4:
@@ -119,17 +122,38 @@ class App(object):
         Handle inputs during run mode
         """
 
-        # process keyboard inputs
+        # process keyboard inputs held
         keys = pg.key.get_pressed()
-        if keys[pg.K_ESCAPE]:
-            self.done = True
-        if keys[pg.K_SPACE]:
-            self.state = "build"
+
+        if keys[pg.K_DOWN]:
+            self.camera.move(np.array((0, App.CAMERA_MOVE_SPEED)))
+        if keys[pg.K_UP]:
+            self.camera.move(np.array((0, -App.CAMERA_MOVE_SPEED)))
+        if keys[pg.K_LEFT]:
+            self.camera.move(np.array((-App.CAMERA_MOVE_SPEED, 0)))
+        if keys[pg.K_RIGHT]:
+            self.camera.move(np.array((App.CAMERA_MOVE_SPEED, 0)))
 
         # handle pygame events
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 self.done = True
+
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self.done = True
+
+                elif event.key == pg.K_SPACE:
+                    self.state = "build"
+
+            elif event.type == pg.MOUSEBUTTONDOWN:
+                # Process mouse actions
+
+                # scroll to zoom
+                if event.button == 4:
+                    self.camera.change_scale(App.CAMERA_SCALE_SPEED)
+                if event.button == 5:
+                    self.camera.change_scale(-App.CAMERA_SCALE_SPEED)
 
     def render(self):
         """

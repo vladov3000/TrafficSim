@@ -24,7 +24,7 @@ class Object(ABC):
 class Node(Object):
     """
     Node represents an intersection of streets. Most other objects use Node's pos and rel_pos
-    as endpoints.
+    as reference points.
     """
 
     RADIUS = 5
@@ -33,6 +33,7 @@ class Node(Object):
     selected = None
 
     def __init__(self, pos: np.ndarray):
+        self.rel_radius = Node.RADIUS
         self.pos = pos
         self.x, self.y = self.pos
         self.rel_pos = self.pos
@@ -48,15 +49,19 @@ class Node(Object):
             pg.draw.circle(screen, Node.COLOR, self.rel_pos, Node.RADIUS)
 
     def update(self, **kwargs):
+        """
+        Computes self.rel_pos, self.rel_radius using camera
+        """
         camera = kwargs["camera"]
         self.rel_pos = (self.pos * camera.scale - camera.pos).astype(int)
+        self.rel_radius = Node.RADIUS / camera.scale
 
     def is_touching(self, point: (int, int)) -> bool:
         """
         Returns whether self is touching point
         """
         px, py = point
-        return (px - self.x) ** 2 + (py - self.y) ** 2 <= Node.RADIUS ** 2
+        return (px - self.x) ** 2 + (py - self.y) ** 2 <= self.rel_radius ** 2
 
 
 class Road(Object):
@@ -80,11 +85,9 @@ class Road(Object):
         """
         Renders as line using WIDTH and COLOR
         """
-        rel_pos_left = self.left.rel_pos
-        rel_pos_right = self.right.rel_pos
-        pg.draw.circle(screen, Road.COLOR, rel_pos_left, Road.WIDTH // 2)
-        pg.draw.line(screen, Road.COLOR, rel_pos_left, rel_pos_right, Road.WIDTH)
-        pg.draw.circle(screen, Road.COLOR, rel_pos_right, Road.WIDTH // 2)
+        pg.draw.circle(screen, Road.COLOR, self.left.rel_pos, Road.WIDTH // 2)
+        pg.draw.line(screen, Road.COLOR, self.left.rel_pos, self.right.rel_pos, Road.WIDTH)
+        pg.draw.circle(screen, Road.COLOR, self.right.rel_pos, Road.WIDTH // 2)
 
 
     def update(self, **kwargs):

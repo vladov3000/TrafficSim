@@ -26,6 +26,7 @@ class Camera():
         Change scale by delta
         """
         if Camera.MIN_SCALE < self.scale + delta < Camera.MAX_SCALE:
+            self.pos += (self.size * delta / 2).astype(int)
             self.scale += delta
 
 
