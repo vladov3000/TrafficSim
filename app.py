@@ -30,8 +30,8 @@ class App(object):
         self.fps = 60
 
         self.done = False
-        self.background = Background('./backgrounds/small_city.jpg', (0, 0))
-        self.camera = Camera((0, 0), Camera.MIN_SCALE, App.SCREEN_SIZE)
+        self.background = Background('./backgrounds/small_city.jpg', np.array((0, 0)))
+        self.camera = Camera(np.array((0, 0)), Camera.MIN_SCALE, np.array(App.SCREEN_SIZE))
         self.app_objects = {"Node": [], "Road": []}
         self.state = "build"
 
@@ -46,13 +46,13 @@ class App(object):
         if keys[pg.K_ESCAPE]:
             self.done = True
         if keys[pg.K_DOWN]:
-            self.camera.move((0, App.CAMERA_MOVE_SPEED))
+            self.camera.move(np.array((0, App.CAMERA_MOVE_SPEED)))
         if keys[pg.K_UP]:
-            self.camera.move((0, -App.CAMERA_MOVE_SPEED))
+            self.camera.move(np.array((0, -App.CAMERA_MOVE_SPEED)))
         if keys[pg.K_LEFT]:
-            self.camera.move((-App.CAMERA_MOVE_SPEED, 0))
+            self.camera.move(np.array((-App.CAMERA_MOVE_SPEED, 0)))
         if keys[pg.K_RIGHT]:
-            self.camera.move((App.CAMERA_MOVE_SPEED, 0))
+            self.camera.move(np.array((App.CAMERA_MOVE_SPEED, 0)))
         if keys[pg.K_SPACE]:
             self.state = "run"
 
@@ -67,10 +67,8 @@ class App(object):
                 # scroll to zoom
                 if event.button == 4:
                     self.camera.change_scale(App.CAMERA_SCALE_SPEED)
-                    print(self.camera.scale)
                 if event.button == 5:
                     self.camera.change_scale(-App.CAMERA_SCALE_SPEED)
-                    print(self.camera.scale)
 
                 click_found = False
                 abs_event_pos = np.array(np.add(event.pos, self.camera.pos))

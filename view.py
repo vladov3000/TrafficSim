@@ -9,33 +9,34 @@ class Camera():
     MIN_SCALE = 0.4
     MAX_SCALE = 1.8 # frames drop if scale > MAX_SCALE
 
-    def __init__(self, pos: (int, int), scale: float, size: (int, int)):
+    def __init__(self, pos: np.ndarray, scale: float, size: np.ndarray):
         self.size = size
         self.pos = pos
         self.scale = scale
 
-    def move(self, dpos: (int, int)):
-        self.pos = np.add(self.pos, np.multiply(dpos, self.scale))
+    def move(self, dpos: np.ndarray):
+        self.pos += (dpos * self.scale).astype(int)
 
-    def change_scale(self, delta):
+    def change_scale(self, delta: float):
         if Camera.MIN_SCALE < self.scale + delta < Camera.MAX_SCALE:
             self.scale += delta
-            self.pos = np.add(self.pos, np.multiply(self.size, delta))
+            print((self.size + self.pos) / 2 / self.size)
+            #self.pos += (delta / 2 * self.size).astype(int)
 
 
 class Background(pg.sprite.Sprite):
     """
     Background for App screen
     """
-    def __init__(self, image_file: str, location: (int, int)):
+    def __init__(self, image_file: str, pos: np.ndarray):
         pg.sprite.Sprite.__init__(self)  # call Sprite initializer
         self.image = pg.image.load(image_file)
         self.rect = self.image.get_rect()
-        self.rect.left, self.rect.top = location
+        self.rect.left, self.rect.top = pos
 
     def render(self, screen: pg.Surface, camera: Camera):
         rel_rect = pg.Rect(self.rect)
-        rel_rect.left, rel_rect.top = np.subtract((self.rect.left, self.rect.top), camera.pos)
+        rel_rect.left, rel_rect.top = np.array((self.rect.left, self.rect.top)) - camera.pos
         rel_rect.width = int(self.rect.width * camera.scale)
         rel_rect.height = int(self.rect.height * camera.scale)
         scaled_img = pg.transform.smoothscale(self.image, (rel_rect.width, rel_rect.height))
