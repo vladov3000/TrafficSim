@@ -12,7 +12,7 @@ class App(object):
     """
     BACK_COLOR = pg.Color("white")
     CAPTION = "Traffic Simulator"
-    SCREEN_SIZE = (800, 600)
+    SCREEN_SIZE = np.array((800, 600))
     RENDER_ORDER = ["Road", "Node"]
     CAMERA_MOVE_SPEED = 10
     CAMERA_SCALE_SPEED = 0.1
@@ -31,8 +31,8 @@ class App(object):
 
         self.done = False
         self.background = Background('./backgrounds/small_city.jpg', np.array((0, 0)))
-        self.camera = Camera(np.array((0, 0)), Camera.MIN_SCALE, np.array(App.SCREEN_SIZE))
-        self.app_objects = {"Node": [], "Road": []}
+        self.camera = Camera(np.array((0, 0)), Camera.MIN_SCALE, App.SCREEN_SIZE)
+        self.app_objects = {"Node": [], "Road": []}  # key: obj.__name__(); value: list of all instances
         self.state = "build"
 
     def build_event_loop(self):
@@ -71,7 +71,7 @@ class App(object):
                     self.camera.change_scale(-App.CAMERA_SCALE_SPEED)
 
                 click_found = False
-                abs_event_pos = np.array(np.add(event.pos, self.camera.pos))
+                abs_event_pos = ((np.array(event.pos) + self.camera.pos) / self.camera.scale).astype(int)
                 for n in self.app_objects["Node"]:
                     if n.is_touching(abs_event_pos):
                         # user has clicked node n
@@ -149,8 +149,10 @@ class App(object):
         """
         Update all objects
         """
+
+        # Delete dead objects
         for obj in sum(self.app_objects.values(), []):
-            obj.update()
+            obj.update(**{"camera": self.camera})
             if obj.dead:
                 self.app_objects[type(obj).__name__].remove(obj)
 

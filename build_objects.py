@@ -4,7 +4,6 @@ import numpy as np
 from abc import ABC, abstractmethod
 
 
-
 class Object(ABC):
     """
     Interface for all rendered objects
@@ -18,13 +17,14 @@ class Object(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, **kwargs):
         pass
 
 
 class Node(Object):
     """
-    Node represents an intersection of streets
+    Node represents an intersection of streets. Most other objects use Node's pos and rel_pos
+    as endpoints.
     """
 
     RADIUS = 5
@@ -35,20 +35,21 @@ class Node(Object):
     def __init__(self, pos: np.ndarray):
         self.pos = pos
         self.x, self.y = self.pos
+        self.rel_pos = self.pos
         super(Node, self).__init__()
 
     def render(self, screen: pg.Surface, camera: Camera):
         """
         Renders as a circle. Uses SEL_COLOR if self is selected.
         """
-        rel_pos = np.subtract(self.pos, camera.pos)
         if self is Node.selected:
-            pg.draw.circle(screen, Node.SEL_COLOR, rel_pos, Node.RADIUS)
+            pg.draw.circle(screen, Node.SEL_COLOR, self.rel_pos, Node.RADIUS)
         else:
-            pg.draw.circle(screen, Node.COLOR, rel_pos, Node.RADIUS)
+            pg.draw.circle(screen, Node.COLOR, self.rel_pos, Node.RADIUS)
 
-    def update(self):
-        pass
+    def update(self, **kwargs):
+        camera = kwargs["camera"]
+        self.rel_pos = (self.pos * camera.scale - camera.pos).astype(int)
 
     def is_touching(self, point: (int, int)) -> bool:
         """
@@ -65,7 +66,7 @@ class Road(Object):
 
     COLOR = pg.Color("black")
     WIDTH = 20
-    DEL_SLOPE = 5
+    DEL_SLOPE = 2
 
     def __init__(self, endpoints: (Node, Node)):
         self.dead = False
@@ -79,14 +80,14 @@ class Road(Object):
         """
         Renders as line using WIDTH and COLOR
         """
-        rel_pos_left = np.subtract(self.left.pos, camera.pos)
-        rel_pos_right = np.subtract(self.right.pos, camera.pos)
+        rel_pos_left = self.left.rel_pos
+        rel_pos_right = self.right.rel_pos
         pg.draw.circle(screen, Road.COLOR, rel_pos_left, Road.WIDTH // 2)
         pg.draw.line(screen, Road.COLOR, rel_pos_left, rel_pos_right, Road.WIDTH)
         pg.draw.circle(screen, Road.COLOR, rel_pos_right, Road.WIDTH // 2)
 
 
-    def update(self):
+    def update(self, **kwargs):
         """
         Checks if nodes are still active
         """
