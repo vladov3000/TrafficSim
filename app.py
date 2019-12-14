@@ -3,23 +3,24 @@ import numpy as np
 import os
 import sys
 from build_objects import Node, Road
+from run_objects import Vehicle
 from view import Background, Camera
+from utils import calc_abs_pos
 
 
 class App(object):
-    """
-    A class to manage our event, game loop, and overall program flow.
+    """ A class to manage constants and overall program flow.
     """
     BACK_COLOR = pg.Color("white")
     CAPTION = "Traffic Simulator"
     SCREEN_SIZE = np.array((800, 600))
-    RENDER_ORDER = ["Road", "Node"]
-    CAMERA_MOVE_SPEED = 10
+    RENDER_ORDER = ["Road", "Node", "Vehicle"]
+    CAMERA_MOVE_SPEED = 20
     CAMERA_SCALE_SPEED = 0.1
+    FPS = 60
 
     def __init__(self):
-        """
-        Get a reference to the display surface; set up required attributes;
+        """ Get a reference to the display surface; set up required attributes;
         """
         pg.display.set_caption(App.CAPTION)
         pg.display.set_mode(App.SCREEN_SIZE)
@@ -27,17 +28,18 @@ class App(object):
         self.screen = pg.display.get_surface()
         self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
-        self.fps = 60
 
         self.done = False
+        self.print_dict = {}
+
         self.background = Background('./backgrounds/small_city.jpg', np.array((0, 0)))
         self.camera = Camera(np.array((0, 0)), Camera.MIN_SCALE, App.SCREEN_SIZE)
-        self.app_objects = {"Node": [], "Road": []}  # key: obj.__name__(); value: list of all instances
+        # key: obj.__name__(); value: list of all instances
+        self.app_objects = {"Node": [], "Road": [], "Vehicle": []}
         self.state = "build"
 
     def build_event_loop(self):
-        """
-        Handle inputs during build mode
+        """ Handle inputs during build mode
         """
 
         # process keyboard inputs
@@ -62,7 +64,8 @@ class App(object):
                     self.done = True
 
                 elif event.key == pg.K_SPACE:
-                    self.state = "build"
+                    self.app_objects["Vehicle"].append(Vehicle(self.app_objects["Road"][0], "car_sprites/Audi.png"))
+                    self.state = "run"
 
             elif event.type == pg.MOUSEBUTTONDOWN:
                 # Process mouse actions
@@ -74,7 +77,7 @@ class App(object):
                     self.camera.change_scale(-App.CAMERA_SCALE_SPEED)
 
                 click_found = False
-                abs_event_pos = ((np.array(event.pos) + self.camera.pos) / self.camera.scale).astype(int)
+                abs_event_pos = calc_abs_pos(np.array(event.pos), self.camera)
                 for n in self.app_objects["Node"]:
                     if n.is_touching(abs_event_pos):
                         # user has clicked node n
@@ -83,7 +86,6 @@ class App(object):
                         if event.button == 3:
                             # delete node if user clicks on node
                             n.dead = True
-                            # self.app_objects["nodes"].remove(n)
 
                         elif Node.selected is n:
                             # deselect if user clicks selected node
@@ -118,8 +120,7 @@ class App(object):
                     Node.selected = None
 
     def run_event_loop(self):
-        """
-        Handle inputs during run mode
+        """ Handle inputs during run mode
         """
 
         # process keyboard inputs held
@@ -156,23 +157,22 @@ class App(object):
                     self.camera.change_scale(-App.CAMERA_SCALE_SPEED)
 
     def render(self):
-        """
-        Render all objects
+        """ Render all objects
         """
         # render background
         self.screen.fill(App.BACK_COLOR)
-        self.background.render(self.screen, self.camera)
+        self.background.render(self.screen)
 
         # order to render objects in
         for objs in App.RENDER_ORDER:
             for obj in self.app_objects[objs]:
-                obj.render(self.screen, self.camera)
+                obj.render(self.screen)
         pg.display.update()
 
     def update(self):
+        """ Update all objects
         """
-        Update all objects
-        """
+        self.background.update(self.camera)
 
         # Delete dead objects
         for obj in sum(self.app_objects.values(), []):
@@ -181,17 +181,31 @@ class App(object):
                 self.app_objects[type(obj).__name__].remove(obj)
 
     def main_loop(self):
-        """
-        One App loop. Simple and clean.
+        """ Runs event loops, updates, and renders while App not done
         """
         while not self.done:
+            if str(self) != "":
+                print(self)
             if self.state == "build":
                 self.build_event_loop()
             elif self.state == "run":
                 self.run_event_loop()
             self.update()
             self.render()
-            self.clock.tick(self.fps)
+            self.clock.tick(App.FPS)
+
+    def __str__(self):
+        """ Formats the values in self.print_values
+
+        :return: string
+        """
+        s = ""
+        for name, field in self.print_dict.items():
+            val = getattr(field[0], field[1])
+            if callable(val):
+                val = val()
+            s += "%s: %s " % (name, str(val))
+        return s
 
 
 def main():
@@ -200,7 +214,10 @@ def main():
     """
     os.environ['SDL_VIDEO_CENTERED'] = '1'
     pg.init()
-    App().main_loop()
+    app = App()
+    # app.print_dict["fps"] = (app.clock, "get_fps")
+    # app.print_dict["scale"] = (app.camera, "scale")
+    app.main_loop()
     pg.quit()
     sys.exit()
 
